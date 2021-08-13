@@ -14,7 +14,6 @@ using namespace std;
 
 #define MAX_LOADSTRING 100
 #define THRESHOLD 0.03
-#define BMPHEADSIZE 54
 
 #define THRESHOLD_LOW 0.33
 #define THRESHOLD_HIGH 0.99
@@ -27,14 +26,13 @@ typedef unsigned int       T_U32;
 
 unsigned char img_data[1024*1024*20];
 
-//Original function
-int Auto_Contrast_Gradation(IMAGE_TYPE* bmp_img, double dlowcut, double dhighcut)
+int Auto_Contrast_Gradation(unsigned char* bmp_img, double dlowcut, double dhighcut, string filename)
 {
 	DWORD width, height, dst_index, index;
 	WORD  biBitCount;
 	T_U8* bmp_data, R, G, B, * Result_img, BytePerPixel = 3;
 	T_U32 line_byte, TmpR, TmpG, TmpB, Sum, PixCount;
-	T_U16 i, j, MinBlue, MaxBlue, MinRed, MaxRed, MinGreen, MaxGreen, Max, Min, Y;
+	T_U16 i, j, MinBlue = 0, MaxBlue = 255, MinRed = 0, MaxRed = 255, MinGreen = 0, MaxGreen = 255, Max = 255, Min = 0, Y;
 	int newX, newY;
 	double Tmp;
 	double HistRed[256] = { 0 };
@@ -49,8 +47,9 @@ int Auto_Contrast_Gradation(IMAGE_TYPE* bmp_img, double dlowcut, double dhighcut
 	BITMAPFILEHEADER bf;
 	BITMAPINFOHEADER bi;
 
+	
 	FILE* Auto_Contrast_Gradation_fp;
-	fopen_s(&Auto_Contrast_Gradation_fp, "Auto_Contrast_Gradation.bmp", "wb");
+	fopen_s(&Auto_Contrast_Gradation_fp, filename.c_str(), "wb");
 
 	if (NULL == Auto_Contrast_Gradation_fp)
 	{
@@ -73,7 +72,7 @@ int Auto_Contrast_Gradation(IMAGE_TYPE* bmp_img, double dlowcut, double dhighcut
 	fwrite(&bi, sizeof(BITMAPINFOHEADER), 1, Auto_Contrast_Gradation_fp);
 
 
-	bmp_data = bmp_img + BMPHEADSIZE;
+	bmp_data = bmp_img + 54;
 
 	for (i = 0; i < height; i++)
 	{
@@ -102,7 +101,7 @@ int Auto_Contrast_Gradation(IMAGE_TYPE* bmp_img, double dlowcut, double dhighcut
 	for (Y = 0; Y < 256; Y++)
 	{
 		Sum += HistBlue[Y];
-		if (Sum >= PixCount * dlowcut * THRESHOLD)
+		if (Sum >= PixCount * dlowcut)
 		{
 			MinBlue = Y;
 			break;
@@ -113,7 +112,7 @@ int Auto_Contrast_Gradation(IMAGE_TYPE* bmp_img, double dlowcut, double dhighcut
 	for (Y = 255; Y >= 0; Y--)
 	{
 		Sum += HistBlue[Y];
-		if (Sum >= PixCount * dhighcut * THRESHOLD)
+		if (Sum >= PixCount * dhighcut)
 		{
 			MaxBlue = Y;
 			break;
@@ -126,7 +125,7 @@ int Auto_Contrast_Gradation(IMAGE_TYPE* bmp_img, double dlowcut, double dhighcut
 	for (Y = 0; Y < 256; Y++)
 	{
 		Sum += HistGreen[Y];
-		if (Sum >= PixCount * dlowcut * THRESHOLD)
+		if (Sum >= PixCount * dlowcut)
 		{
 			MinGreen = Y;
 			break;
@@ -137,7 +136,7 @@ int Auto_Contrast_Gradation(IMAGE_TYPE* bmp_img, double dlowcut, double dhighcut
 	for (Y = 255; Y >= 0; Y--)
 	{
 		Sum += HistGreen[Y];
-		if (Sum >= PixCount * dhighcut * THRESHOLD)
+		if (Sum >= PixCount * dhighcut)
 		{
 			MaxGreen = Y;
 			break;
@@ -150,7 +149,7 @@ int Auto_Contrast_Gradation(IMAGE_TYPE* bmp_img, double dlowcut, double dhighcut
 	for (Y = 0; Y < 256; Y++)
 	{
 		Sum += HistRed[Y];
-		if (Sum >= PixCount * dlowcut * THRESHOLD)
+		if (Sum >= PixCount * dlowcut)
 		{
 			MinRed = Y;
 			break;
@@ -161,7 +160,7 @@ int Auto_Contrast_Gradation(IMAGE_TYPE* bmp_img, double dlowcut, double dhighcut
 	for (Y = 255; Y >= 0; Y--)
 	{
 		Sum += HistRed[Y];
-		if (Sum >= PixCount * dhighcut * THRESHOLD)
+		if (Sum >= PixCount * dhighcut)
 		{
 			MaxRed = Y;
 			break;
@@ -263,9 +262,15 @@ int Auto_Contrast_Gradation(IMAGE_TYPE* bmp_img, double dlowcut, double dhighcut
 		dst_index = i * line_byte;
 		for (j = 0; j < width; j++)
 		{
-			bmp_data[dst_index] = Map[bmp_data[dst_index]];
-			bmp_data[dst_index + 1] = Map[bmp_data[dst_index + 1]];
-			bmp_data[dst_index + 2] = Map[bmp_data[dst_index + 2]];
+			unsigned char R = Map[bmp_data[dst_index]];
+			unsigned char G = Map[bmp_data[dst_index + 1]];
+			unsigned char B = Map[bmp_data[dst_index + 2]];
+			bmp_data[dst_index] = R;
+			bmp_data[dst_index + 1] = G;
+			bmp_data[dst_index + 2] = B;
+
+			
+			
 
 			dst_index += BytePerPixel;
 
@@ -395,39 +400,39 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	//	fclose(fp);
    
 
-   //for (double x = 0.01; x <= 1.0; x += 0.1)
-   //{
-	  // for (double y = 0.1; y <= 0.2; y += 0.1)
-	  // {
-		 //  std::ifstream file("a.bmp", std::ios::binary | std::ios::ate);
-		 //  std::streamsize size = file.tellg();
-		 //  file.seekg(0, std::ios::beg);
-		 //  std::vector<char> buffer(size);
-		 //  if (file.read(buffer.data(), size))
-		 //  {
-			//   /* worked! */
-		 //  }
-
-		 //  string s = "result_";
-		 //  s += std::to_string(x);
-		 //  s += std::to_string(y);
-		 //  s += ".bmp";
-		 //  Auto_Contrast_Gradation((unsigned char*)&buffer[0], x, y, s);
-	  // }
-   //}
-   
-   std::ifstream file("test.bmp", std::ios::binary | std::ios::ate);
-   std::streamsize size = file.tellg();
-   file.seekg(0, std::ios::beg);
-   std::vector<char> buffer(size);
-   if (file.read(buffer.data(), size))
+   for (double x = 0.01; x <= 1.0; x += 0.1)
    {
-	   /* worked! */
-   }
+	   for (double y = 0.1; y <= 0.2; y += 0.1)
+	   {
+		   std::ifstream file("test.bmp", std::ios::binary | std::ios::ate);
+		   std::streamsize size = file.tellg();
+		   file.seekg(0, std::ios::beg);
+		   std::vector<char> buffer(size);
+		   if (file.read(buffer.data(), size))
+		   {
+			   /* worked! */
+		   }
 
-   string s = "result_";
-   s += ".bmp";
-   Auto_Contrast_Gradation((unsigned char*)&buffer[0], 0.1, 0.1);
+		   string s = "result_";
+		   s += std::to_string(x);
+		   s += std::to_string(y);
+		   s += ".bmp";
+		   Auto_Contrast_Gradation((unsigned char*)&buffer[0], x, y, s);
+	   }
+   }
+   
+   //std::ifstream file("a.bmp", std::ios::binary | std::ios::ate);
+   //std::streamsize size = file.tellg();
+   //file.seekg(0, std::ios::beg);
+   //std::vector<char> buffer(size);
+   //if (file.read(buffer.data(), size))
+   //{
+	  // /* worked! */
+   //}
+
+   //string s = "result_";
+   //s += ".bmp";
+   //Auto_Contrast_Gradation((unsigned char*)&buffer[0], 0.1, 0.1, s);
 
 
 	
